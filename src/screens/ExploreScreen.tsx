@@ -56,7 +56,7 @@ export const ExploreScreen: React.FC = () => {
       </header>
 
       {/* 6 Category Tabs: Pure Picture/Icon Only (No Words) */}
-      <nav aria-label="Category tabs" className="w-full flex items-center justify-center gap-2.5 sm:gap-4 mb-6 px-1">
+      <nav aria-label="Category tabs" className="w-full flex items-center justify-center gap-1.5 sm:gap-3 md:gap-4 mb-6 px-1 max-w-full">
         {CATEGORY_REPRESENTATIVES.map(({ category, repWordId, bgGradient }) => {
           const repWord = getWordById(repWordId)!;
           const isSelected = selectedCategory === category;
@@ -72,13 +72,13 @@ export const ExploreScreen: React.FC = () => {
               transition={{ duration: 0.3 }}
               className={`
                 relative
-                w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20
+                w-12 h-12 xs:w-14 xs:h-14 sm:w-16 sm:h-16 md:w-20 md:h-20
                 rounded-2xl sm:rounded-3xl
-                flex items-center justify-center p-1.5
-                cursor-pointer touch-manipulation transition-all
+                flex items-center justify-center p-1 sm:p-1.5
+                cursor-pointer touch-manipulation transition-all shrink-0
                 ${
                   isSelected
-                    ? `bg-gradient-to-br ${bgGradient} border-4 border-amber-400 shadow-[0_8px_16px_rgba(251,191,36,0.35)] ring-4 ring-amber-200/60`
+                    ? `bg-gradient-to-br ${bgGradient} border-3 sm:border-4 border-amber-400 shadow-[0_8px_16px_rgba(251,191,36,0.35)] ring-2 sm:ring-4 ring-amber-200/60`
                     : 'bg-white/80 border-2 border-slate-200/80 shadow-xs opacity-75 hover:opacity-100'
                 }
               `}
@@ -86,8 +86,8 @@ export const ExploreScreen: React.FC = () => {
               <WordImage
                 word={repWord}
                 alt=""
-                className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14"
-                emojiClassName="text-3xl sm:text-4xl md:text-5xl"
+                className="w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 md:w-14 md:h-14"
+                emojiClassName="text-2xl xs:text-3xl sm:text-4xl md:text-5xl"
               />
             </motion.button>
           );
@@ -95,7 +95,7 @@ export const ExploreScreen: React.FC = () => {
       </nav>
 
       {/* Picture Card Grid (7 cards per category, frameless floating toddler cards) */}
-      <main className="flex-1 w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6 items-center justify-items-center">
+      <main className="flex-1 w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 items-center justify-items-center">
         <AnimatePresence mode="popLayout">
           {filteredWords.map((word) => {
             const isActive = activeWordId === word.id;

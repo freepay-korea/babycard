@@ -432,10 +432,10 @@ export const GameScreen: React.FC = () => {
       )}
 
       {/* Scene B (Finding): Frameless Floating Picture Stickers */}
-      <main className="relative flex-1 w-full max-w-2xl mx-auto z-10">
+      <main className="relative flex-1 w-full max-w-2xl mx-auto z-10 px-2">
         <AnimatePresence>
           {scene === 'finding' && !isRoundComplete && (
-            <div className="relative w-full h-full min-h-[500px]">
+            <div className="relative w-full h-full min-h-[460px] sm:min-h-[500px]">
               {stickers.map((sticker, idx) => {
                 const isCorrectChosen = correctCardId === sticker.word.id;
                 const isWobbling = wobblingCardId === sticker.word.id;
@@ -443,112 +443,116 @@ export const GameScreen: React.FC = () => {
                 const isHintTarget = hintActive && sticker.isCorrect;
 
                 return (
-                  <motion.div
+                  <div
                     key={`${currentQIndex}-${sticker.word.id}`}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{
-                      scale: isCorrectChosen
-                        ? [1, 1.35, 1.15, 1.25]
-                        : isDisabled
-                        ? 0.92
-                        : isHintTarget
-                        ? [sticker.zone.scale, sticker.zone.scale * 1.14, sticker.zone.scale]
-                        : sticker.zone.scale,
-                      opacity: isDisabled ? 0.38 : 1,
-                      left: sticker.zone.x,
-                      top: sticker.zone.y,
-                      rotate: isHintTarget ? [-4, 4, -4, 0] : 0,
-                      x: isWobbling ? [-10, 10, -7, 7, -3, 3, 0] : 0,
-                      transition: {
-                        scale: isCorrectChosen
-                          ? { duration: 0.8, ease: 'easeOut' }
-                          : isHintTarget
-                          ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
-                          : { duration: 0.5, delay: idx * 0.12, ease: [0.34, 1.56, 0.64, 1] },
-                        rotate: isHintTarget
-                          ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
-                          : undefined,
-                        opacity: { duration: 0.25 },
-                        x: isWobbling ? { duration: 0.45, ease: 'easeInOut' } : undefined,
-                      },
-                    }}
-                    exit={{ scale: 0, opacity: 0 }}
                     style={{
                       position: 'absolute',
+                      left: sticker.zone.x,
+                      top: sticker.zone.y,
                       transform: 'translate(-50%, -50%)',
                     }}
-                    className={`will-change-transform z-10 ${isDisabled ? 'pointer-events-none' : ''}`}
+                    className={`z-10 ${isDisabled ? 'pointer-events-none' : ''}`}
                   >
-                    {/* Gentle floating loop */}
                     <motion.div
-                      animate={
-                        !isCorrectChosen && !isWobbling
-                          ? {
-                              y: sticker.zone.floatY,
-                              rotate: sticker.zone.floatRotate,
-                            }
-                          : undefined
-                      }
-                      transition={
-                        !isCorrectChosen && !isWobbling
-                          ? {
-                              duration: sticker.zone.duration,
-                              repeat: Infinity,
-                              ease: 'easeInOut',
-                              delay: sticker.zone.delay,
-                            }
-                          : undefined
-                      }
-                      className="will-change-transform relative"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{
+                        scale: isCorrectChosen
+                          ? [1, 1.35, 1.15, 1.25]
+                          : isDisabled
+                          ? 0.92
+                          : isHintTarget
+                          ? [sticker.zone.scale, sticker.zone.scale * 1.14, sticker.zone.scale]
+                          : sticker.zone.scale,
+                        opacity: isDisabled ? 0.38 : 1,
+                        rotate: isHintTarget ? [-4, 4, -4, 0] : 0,
+                        x: isWobbling ? [-10, 10, -7, 7, -3, 3, 0] : 0,
+                        transition: {
+                          scale: isCorrectChosen
+                            ? { duration: 0.8, ease: 'easeOut' }
+                            : isHintTarget
+                            ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
+                            : { duration: 0.5, delay: idx * 0.12, ease: [0.34, 1.56, 0.64, 1] },
+                          rotate: isHintTarget
+                            ? { duration: 1.5, repeat: Infinity, ease: 'easeInOut' }
+                            : undefined,
+                          opacity: { duration: 0.25 },
+                          x: isWobbling ? { duration: 0.45, ease: 'easeInOut' } : undefined,
+                        },
+                      }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      className="will-change-transform"
                     >
-                      {/* Touch hitbox >= 140px */}
-                      <motion.button
-                        type="button"
-                        disabled={isDisabled || isInputLocked}
-                        onClick={() => handleStickerClick(sticker)}
-                        whileTap={!isDisabled && !isInputLocked ? { scale: 0.88, rotate: -4 } : undefined}
-                        aria-label={language === 'ko' ? sticker.word.ko : sticker.word.en}
-                        className={`
-                          min-w-[140px] min-h-[140px] w-40 h-40
-                          flex items-center justify-center
-                          select-none touch-manipulation
-                          bg-transparent border-none outline-none
-                          relative
-                          ${isDisabled ? 'cursor-not-allowed filter grayscale-[30%]' : 'cursor-pointer'}
-                        `}
+                      {/* Gentle floating loop */}
+                      <motion.div
+                        animate={
+                          !isCorrectChosen && !isWobbling
+                            ? {
+                                y: sticker.zone.floatY,
+                                rotate: sticker.zone.floatRotate,
+                              }
+                            : undefined
+                        }
+                        transition={
+                          !isCorrectChosen && !isWobbling
+                            ? {
+                                duration: sticker.zone.duration,
+                                repeat: Infinity,
+                                ease: 'easeInOut',
+                                delay: sticker.zone.delay,
+                              }
+                            : undefined
+                        }
+                        className="will-change-transform relative"
                       >
-                        <WordImage
-                          word={sticker.word}
-                          alt={language === 'ko' ? sticker.word.ko : sticker.word.en}
-                          className="w-32 h-32 md:w-36 md:h-36"
-                          emojiClassName="text-8xl md:text-9xl"
-                        />
+                        {/* Touch hitbox >= 130px on small mobile, >= 140px on tablet */}
+                        <motion.button
+                          type="button"
+                          disabled={isDisabled || isInputLocked}
+                          onClick={() => handleStickerClick(sticker)}
+                          whileTap={!isDisabled && !isInputLocked ? { scale: 0.88, rotate: -4 } : undefined}
+                          aria-label={language === 'ko' ? sticker.word.ko : sticker.word.en}
+                          className={`
+                            min-w-[126px] min-h-[126px] sm:min-w-[140px] sm:min-h-[140px] w-32 h-32 sm:w-40 sm:h-40
+                            flex items-center justify-center
+                            select-none touch-manipulation
+                            bg-transparent border-none outline-none
+                            relative
+                            ${isDisabled ? 'cursor-not-allowed filter grayscale-[30%]' : 'cursor-pointer'}
+                          `}
+                        >
+                          <WordImage
+                            word={sticker.word}
+                            alt={language === 'ko' ? sticker.word.ko : sticker.word.en}
+                            className="w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36"
+                            emojiClassName="text-7xl sm:text-8xl md:text-9xl"
+                          />
 
-                        {/* Correct Celebration Sparkle Crown */}
-                        {isCorrectChosen && (
-                          <motion.div
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: [0, 1.4, 1.1], opacity: 1 }}
-                            transition={{ duration: 0.4 }}
-                            className="absolute -top-6 text-4xl select-none pointer-events-none drop-shadow-md"
-                          >
-                            ✨👑✨
-                          </motion.div>
-                        )}
+                          {/* Correct Celebration Sparkle Crown */}
+                          {isCorrectChosen && (
+                            <motion.div
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: [0, 1.4, 1.1], opacity: 1 }}
+                              transition={{ duration: 0.4 }}
+                              className="absolute -top-6 text-4xl select-none pointer-events-none drop-shadow-md"
+                            >
+                              ✨👑✨
+                            </motion.div>
+                          )}
 
-                        {/* 10s Inactivity Hint Sparkle Guide */}
-                        {isHintTarget && !isCorrectChosen && (
-                          <motion.div
-                            animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
-                            transition={{ duration: 1.2, repeat: Infinity }}
-                            className="absolute -top-3 text-3xl select-none pointer-events-none drop-shadow-sm"
-                          >
-                            ✨
-                          </motion.div>
-                        )}
-                      </motion.button>
+                          {/* 10s Inactivity Hint Sparkle Guide */}
+                          {isHintTarget && !isCorrectChosen && (
+                            <motion.div
+                              animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+                              transition={{ duration: 1.2, repeat: Infinity }}
+                              className="absolute -top-3 text-3xl select-none pointer-events-none drop-shadow-sm"
+                            >
+                              ✨
+                            </motion.div>
+                          )}
+                        </motion.button>
+                      </motion.div>
                     </motion.div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
