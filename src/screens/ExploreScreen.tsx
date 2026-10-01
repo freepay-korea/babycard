@@ -28,7 +28,7 @@ export const ExploreScreen: React.FC = () => {
     setActiveWordId(word.id);
     playTap();
     if (soundEnabled) {
-      speak(language === 'ko' ? word.ko : word.en, language);
+      speak(language === 'ko' ? word.ko : word.en, language, word.id);
     }
   };
 

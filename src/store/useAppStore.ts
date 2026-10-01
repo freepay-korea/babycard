@@ -42,6 +42,10 @@ export interface AppState {
   completedBoardsCount: number; // How many 20-slot boards completed
   unlockedStickers: string[]; // All unique stickers unlocked historically
 
+  // Parent Voice Recording
+  parentVoiceEnabled: boolean;
+  recordedVoiceIds: string[];
+
   // Actions
   setScreen: (screen: ScreenType) => void;
   setLanguage: (lang: LanguageType) => void;
@@ -56,6 +60,13 @@ export interface AppState {
   setLastMistakeWordIds: (ids: string[]) => void;
   addMistakeWordId: (id: string) => void;
   clearMistakeWordIds: () => void;
+
+  // Parent voice actions
+  setParentVoiceEnabled: (enabled: boolean) => void;
+  toggleParentVoice: () => void;
+  setRecordedVoiceIds: (ids: string[]) => void;
+  addRecordedVoiceId: (id: string) => void;
+  removeRecordedVoiceId: (id: string) => void;
   
   // Daily time limit actions
   setDailyLimitMinutes: (minutes: DailyLimitMinutes) => void;
@@ -96,6 +107,10 @@ export const useAppStore = create<AppState>()(
       boardStickers: ['dog', 'cat', 'apple', 'car'],
       completedBoardsCount: 0,
       unlockedStickers: ['dog', 'cat', 'apple', 'car'],
+
+      // Parent Voice
+      parentVoiceEnabled: true,
+      recordedVoiceIds: [],
 
       setScreen: (screen: ScreenType) => set({ screen }),
       setLanguage: (language: LanguageType) => set({ language }),
@@ -175,6 +190,20 @@ export const useAppStore = create<AppState>()(
       },
 
       clearMistakeWordIds: () => set({ lastMistakeWordIds: [] }),
+
+      // Parent Voice actions
+      setParentVoiceEnabled: (parentVoiceEnabled: boolean) => set({ parentVoiceEnabled }),
+      toggleParentVoice: () => set({ parentVoiceEnabled: !get().parentVoiceEnabled }),
+      setRecordedVoiceIds: (recordedVoiceIds: string[]) => set({ recordedVoiceIds }),
+      addRecordedVoiceId: (id: string) => {
+        const current = get().recordedVoiceIds;
+        if (!current.includes(id)) {
+          set({ recordedVoiceIds: [...current, id] });
+        }
+      },
+      removeRecordedVoiceId: (id: string) => {
+        set({ recordedVoiceIds: get().recordedVoiceIds.filter((item) => item !== id) });
+      },
 
       // Daily usage time limit logic
       setDailyLimitMinutes: (minutes: DailyLimitMinutes) => {

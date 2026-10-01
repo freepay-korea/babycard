@@ -11,6 +11,9 @@
 
 import { Capacitor } from '@capacitor/core';
 import { TextToSpeech } from '@capacitor-community/text-to-speech';
+import { parentVoiceStorage } from './parentVoiceStorage';
+import { useAppStore } from '../store/useAppStore';
+import { PRAISE_ITEMS, getRandomDefaultPraise } from '../data/praise';
 
 export type SupportedLanguage = 'ko' | 'en';
 
@@ -18,9 +21,20 @@ class ToddlerSpeechService {
   private voices: SpeechSynthesisVoice[] = [];
   private isInitialized = false;
   private activeUtterance: SpeechSynthesisUtterance | null = null;
+  private currentAudioElement: HTMLAudioElement | null = null;
 
   constructor() {
     this.initVoices();
+    this.initParentVoiceCache();
+  }
+
+  private async initParentVoiceCache(): Promise<void> {
+    try {
+      const ids = await parentVoiceStorage.initCache();
+      useAppStore.getState().setRecordedVoiceIds(ids);
+    } catch (e) {
+      console.warn('Parent voice cache init failed:', e);
+    }
   }
 
   private initVoices(): void {
@@ -97,9 +111,61 @@ class ToddlerSpeechService {
   }
 
   /**
-   * Speak text: automatically chooses between Native Android TTS and Web Speech API
+   * Play parent voice recording directly from cache
    */
-  public async speak(text: string, lang: SupportedLanguage = 'ko'): Promise<void> {
+  public async playParentVoice(wordId: string): Promise<boolean> {
+    const audioUrl = parentVoiceStorage.getVoiceUrl(wordId);
+    if (!audioUrl) return false;
+
+    return new Promise((resolve) => {
+      try {
+        if (this.currentAudioElement) {
+          this.currentAudioElement.pause();
+          this.currentAudioElement = null;
+        }
+
+        const audio = new Audio(audioUrl);
+        this.currentAudioElement = audio;
+
+        let finished = false;
+        const done = (success: boolean) => {
+          if (!finished) {
+            finished = true;
+            this.currentAudioElement = null;
+            resolve(success);
+          }
+        };
+
+        audio.onended = () => done(true);
+        audio.onerror = () => done(false);
+
+        // Max 5s fallback in case of audio stall
+        setTimeout(() => done(true), 5000);
+
+        audio.play().catch((err) => {
+          console.warn('Audio play error:', err);
+          done(false);
+        });
+      } catch (err) {
+        console.warn('Parent voice play failed:', err);
+        resolve(false);
+      }
+    });
+  }
+
+  /**
+   * Speak text: automatically checks parent voice first (if enabled), then Native Android TTS, then Web Speech API
+   */
+  public async speak(text: string, lang: SupportedLanguage = 'ko', wordId?: string): Promise<void> {
+    // 0. Check parent voice recording priority
+    const storeState = useAppStore.getState();
+    if (storeState.parentVoiceEnabled && wordId && parentVoiceStorage.hasVoice(wordId)) {
+      const played = await this.playParentVoice(wordId);
+      if (played) {
+        return;
+      }
+    }
+
     // 1. Native Android / iOS via Capacitor Plugin
     if (Capacitor.isNativePlatform()) {
       try {
@@ -218,6 +284,33 @@ class ToddlerSpeechService {
 
 export const toddlerSpeech = new ToddlerSpeechService();
 
-export const speak = (text: string, lang: SupportedLanguage = 'ko') => toddlerSpeech.speak(text, lang);
+export const speak = (text: string, lang: SupportedLanguage = 'ko', wordId?: string) =>
+  toddlerSpeech.speak(text, lang, wordId);
+export const playParentVoice = (wordId: string) => toddlerSpeech.playParentVoice(wordId);
 export const unlockAudio = () => toddlerSpeech.unlockAudio();
 export const hasVoice = (lang: SupportedLanguage) => toddlerSpeech.hasVoice(lang);
+
+export const playPraiseVoice = async (wordText: string, lang: SupportedLanguage = 'ko'): Promise<void> => {
+  const storeState = useAppStore.getState();
+
+  // 1. If parent voice is enabled, check if any custom praise recording exists
+  if (storeState.parentVoiceEnabled) {
+    const recordedPraiseIds = PRAISE_ITEMS
+      .map((p) => p.id)
+      .filter((id) => parentVoiceStorage.hasVoice(id));
+
+    if (recordedPraiseIds.length > 0) {
+      // Pick a random recorded parent praise
+      const randomId = recordedPraiseIds[Math.floor(Math.random() * recordedPraiseIds.length)];
+      const played = await toddlerSpeech.playParentVoice(randomId);
+      if (played) {
+        return;
+      }
+    }
+  }
+
+  // 2. Default TTS praise
+  const praiseText = getRandomDefaultPraise(wordText, lang);
+  await toddlerSpeech.speak(praiseText, lang);
+};
+

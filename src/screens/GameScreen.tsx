@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store/useAppStore';
 import { Home, Volume2, Sparkles, Award } from 'lucide-react';
-import { speak } from '../audio/speech';
+import { speak, playPraiseVoice } from '../audio/speech';
 import { playCorrect, playWobble, playCheer } from '../audio/sfx';
 import { fireToddlerConfetti } from '../utils/confetti';
 import { WordImage } from '../components/WordImage';
@@ -96,7 +96,7 @@ export const GameScreen: React.FC = () => {
     // 5-second inactivity hint: re-read word
     inactivityTimer5sRef.current = setTimeout(() => {
       if (soundEnabled && scene === 'finding') {
-        speak(currentWordText, language);
+        speak(currentWordText, language, targetWord.id);
       }
     }, 5000);
 
@@ -133,7 +133,7 @@ export const GameScreen: React.FC = () => {
       let isMounted = true;
 
       if (soundEnabled) {
-        speak(currentWordText, language).then(() => {
+        speak(currentWordText, language, targetWord.id).then(() => {
           if (isMounted) {
             introTimerRef.current = setTimeout(() => {
               if (isMounted) {
@@ -157,7 +157,7 @@ export const GameScreen: React.FC = () => {
         if (introTimerRef.current) clearTimeout(introTimerRef.current);
       };
     }
-  }, [scene, currentQIndex, currentWordText, language, soundEnabled, isRoundComplete, clearInactivityTimers]);
+  }, [scene, currentQIndex, currentWordText, language, soundEnabled, isRoundComplete, clearInactivityTimers, targetWord.id]);
 
   // Whenever scene enters 'finding', start inactivity timers
   useEffect(() => {
@@ -170,30 +170,7 @@ export const GameScreen: React.FC = () => {
   const handleWordTap = () => {
     resetInactivityTimers();
     if (soundEnabled) {
-      speak(currentWordText, language);
-    }
-  };
-
-  // Generate random praise phrase for correct answer
-  const getRandomPraise = (word: string): string => {
-    if (language === 'ko') {
-      const phrases = [
-        `딩동댕! ${word}!`,
-        `잘했어! ${word}!`,
-        `최고야! ${word}!`,
-        `와! ${word}!`,
-        `참 잘했어요!`,
-      ];
-      return phrases[Math.floor(Math.random() * phrases.length)];
-    } else {
-      const phrases = [
-        `Great! ${word}!`,
-        `Yay! ${word}!`,
-        `Awesome! ${word}!`,
-        `Super! ${word}!`,
-        `Good job!`,
-      ];
-      return phrases[Math.floor(Math.random() * phrases.length)];
+      speak(currentWordText, language, targetWord.id);
     }
   };
 
@@ -210,7 +187,7 @@ export const GameScreen: React.FC = () => {
     // 1. 정답인 경우 (Correct Answer)
     // ----------------------------------------------------
     if (sticker.isCorrect) {
-      // Lock all inputs immediately for the 1.5s animation
+      // Lock all inputs immediately
       setIsInputLocked(true);
       clearInactivityTimers();
       setHintActive(false);
@@ -220,12 +197,6 @@ export const GameScreen: React.FC = () => {
       fireToddlerConfetti();
       playCorrect();
 
-      // Random praise TTS
-      if (soundEnabled) {
-        const praise = getRandomPraise(tappedWordText);
-        speak(praise, language);
-      }
-
       // If answered on first try, increment firstTryCorrectCount
       let updatedFirstTryCount = firstTryCorrectCount;
       if (isCurrentQuestionFirstTry) {
@@ -233,23 +204,34 @@ export const GameScreen: React.FC = () => {
         setFirstTryCorrectCount(updatedFirstTryCount);
       }
 
-      // 1.5 seconds later: advance to next question or complete round (or bedtime if time limit reached)
-      nextQuestionTimerRef.current = setTimeout(() => {
-        // "시간이 다 되면 현재 문제를 마친 뒤 '오늘은 여기까지! 내일 또 만나' 화면"
-        if (isTimeLimitExceeded()) {
-          setScreen('bedtime');
-          return;
-        }
+      // Play praise voice (parent recorded praise voice or default TTS)
+      const praisePromise = soundEnabled
+        ? playPraiseVoice(tappedWordText, language)
+        : Promise.resolve();
 
-        if (currentQIndex < questions.length - 1) {
-          setCurrentQIndex((prev) => prev + 1);
-          setScene('intro');
-          setIsInputLocked(false);
-        } else {
-          // Round Finished! (All 5 questions complete)
-          handleRoundComplete(updatedFirstTryCount);
-        }
-      }, 1500);
+      // Minimum 2.2s celebration delay so child can see celebration & hear chime
+      const minCelebrationPromise = new Promise((resolve) => setTimeout(resolve, 2200));
+
+      // Wait until BOTH praise voice finishes AND minimum celebration delay passes
+      Promise.all([praisePromise, minCelebrationPromise]).then(() => {
+        // Comfortable 500ms peaceful pause after voice completes
+        nextQuestionTimerRef.current = setTimeout(() => {
+          // "시간이 다 되면 현재 문제를 마친 뒤 '오늘은 여기까지! 내일 또 만나' 화면"
+          if (isTimeLimitExceeded()) {
+            setScreen('bedtime');
+            return;
+          }
+
+          if (currentQIndex < questions.length - 1) {
+            setCurrentQIndex((prev) => prev + 1);
+            setScene('intro');
+            setIsInputLocked(false);
+          } else {
+            // Round Finished! (All 5 questions complete)
+            handleRoundComplete(updatedFirstTryCount);
+          }
+        }, 500);
+      });
     } else {
       // ----------------------------------------------------
       // 2. 오답인 경우 (Incorrect Answer - Gentle Learning)

@@ -17,6 +17,7 @@ import { CATEGORIES, WordCategory } from '../data/words';
 import { hasVoice } from '../audio/speech';
 import { playTap } from '../audio/sfx';
 import { PWAInstallButton } from '../components/PWAInstallButton';
+import { ParentVoiceStudio } from '../components/ParentVoiceStudio';
 
 export const ParentScreen: React.FC = () => {
   const {
@@ -159,7 +160,10 @@ export const ParentScreen: React.FC = () => {
           )}
         </section>
 
-        {/* 2. Difficulty Mode (자동 / 2개 / 3개 / 4개 고정) */}
+        {/* 2. Parent Voice Studio (엄마·아빠 목소리 녹음실) */}
+        <ParentVoiceStudio />
+
+        {/* 3. Difficulty Mode (자동 / 2개 / 3개 / 4개 고정) */}
         <section className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
             <Sliders className="w-4 h-4 text-sky-600" />

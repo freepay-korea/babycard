@@ -43,7 +43,7 @@ export const StickersScreen: React.FC = () => {
       // 1. Tapping collected sticker: bounce + sfx.tap + speak word
       playTap();
       if (soundEnabled) {
-        speak(language === 'ko' ? item.word.ko : item.word.en, language);
+        speak(language === 'ko' ? item.word.ko : item.word.en, language, item.word.id);
       }
     } else {
       // 2. Uncollected slot: gentle soft wobble
