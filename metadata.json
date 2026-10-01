@@ -1,0 +1,6 @@
+{
+  "name": "토닥토닥 첫 낱말 (Toddler First Words)",
+  "description": "2~4세 영유아를 위한 무광고·안심 터치 단어 찾기 및 그림 소리 놀이 앱",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
